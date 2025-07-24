@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lost Items - Lost & Found AI</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <div style="text-align: center; margin-bottom: 2rem">
+        <h1>
+          <i class="fas fa-search-minus" style="color: #e53e3e"></i> Lost Items
+        </h1>
+        <p style="color: #718096; font-size: 1.1rem">
+          Items reported as lost by their owners
+        </p>
+      </div>
+
+      <nav>
+        <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a>
+        <a href="{{ url_for('submit_item') }}"
+          ><i class="fas fa-plus"></i> Report Lost</a
+        >
+        <a href="{{ url_for('view_found_items') }}"
+          ><i class="fas fa-th-list"></i> Found Items</a
+        >
+        <a href="{{ url_for('match_items') }}"
+          ><i class="fas fa-magic"></i> Run AI Match</a
+        >
+        <a href="{{ url_for('get_matches') }}"
+          ><i class="fas fa-chart-line"></i> View Matches</a
+        >
+      </nav>
+
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">
+        <i class="fas fa-info-circle"></i>
+        {{ message }}
+      </div>
+      {% endfor %} {% endif %} {% endwith %} {% if lost_items %}
+      <div class="items-grid">
+        {% for item in lost_items %}
+        <div class="item-card">
+          {% if item.image_path %}
+          <img
+            src="{{ url_for('static', filename=item.image_path.replace('static/', '')) }}"
+            alt="Lost item"
+          />
+          {% else %}
+          <div
+            style="
+              height: 200px;
+              background: linear-gradient(45deg, #f7fafc, #edf2f7);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: #a0aec0;
+            "
+          >
+            <i class="fas fa-image" style="font-size: 3rem"></i>
+          </div>
+          {% endif %}
+          <div class="item-card-content">
+            <h3>
+              <i
+                class="fas fa-exclamation-triangle"
+                style="color: #e53e3e; margin-right: 0.5rem"
+              ></i
+              >{{ item.description }}
+            </h3>
+            <p>
+              <i
+                class="fas fa-map-marker-alt"
+                style="color: #667eea; margin-right: 0.5rem"
+              ></i
+              ><strong>Location:</strong> {{ item.location }}
+            </p>
+            <p>
+              <i
+                class="fas fa-calendar-alt"
+                style="color: #667eea; margin-right: 0.5rem"
+              ></i
+              ><strong>Date/Time:</strong> {{ item.date_time }}
+            </p>
+            {% if item.contact_info %}
+            <p>
+              <i
+                class="fas fa-phone"
+                style="color: #667eea; margin-right: 0.5rem"
+              ></i
+              ><strong>Contact:</strong> {{ item.contact_info }}
+            </p>
+            {% endif %}
+            <p style="font-size: 0.9rem; color: #a0aec0; margin-top: 1rem">
+              <i class="fas fa-clock" style="margin-right: 0.5rem"></i>Reported:
+              {{ item.timestamp.split('.')[0] if '.' in item.timestamp else
+              item.timestamp }}
+            </p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="no-matches">
+        <i
+          class="fas fa-search-minus"
+          style="font-size: 4rem; color: #cbd5e0; margin-bottom: 1rem"
+        ></i>
+        <h3>No Lost Items Reported Yet</h3>
+        <p>
+          Be the first to report a lost item and help build our community
+          database!
+        </p>
+        <a href="{{ url_for('submit_item') }}" class="btn">
+          <i class="fas fa-plus"></i> Report Your First Lost Item
+        </a>
+      </div>
+      {% endif %} {% if lost_items %}
+      <div
+        style="
+          text-align: center;
+          margin-top: 3rem;
+          padding: 2rem;
+          background: #f7fafc;
+          border-radius: 16px;
+        "
+      >
+        <h3 style="color: #2d3748; margin-bottom: 1rem">
+          <i class="fas fa-lightbulb" style="color: #d69e2e"></i> Found
+          Something?
+        </h3>
+        <p style="color: #718096; margin-bottom: 1.5rem">
+          If you found an item that matches any of these descriptions, please
+          upload it to help reunite owners with their belongings.
+        </p>
+        <a
+          href="{{ url_for('upload_found') }}"
+          class="btn"
+          style="max-width: 300px; margin: 0 auto"
+        >
+          <i class="fas fa-upload"></i> Upload Found Item
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </body>
+</html>

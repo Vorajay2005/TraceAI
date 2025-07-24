@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Match Results - Lost & Found AI</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <div style="text-align: center; margin-bottom: 2rem">
+        <h1>
+          <i class="fas fa-chart-line" style="color: #d69e2e"></i> AI Match
+          Results
+        </h1>
+        <p style="color: #718096; font-size: 1.1rem">
+          Potential matches found by our AI algorithm
+        </p>
+      </div>
+
+      <nav>
+        <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a>
+        <a href="{{ url_for('view_lost_items') }}"
+          ><i class="fas fa-list"></i> Lost Items</a
+        >
+        <a href="{{ url_for('view_found_items') }}"
+          ><i class="fas fa-th-list"></i> Found Items</a
+        >
+        <a href="{{ url_for('match_items') }}"
+          ><i class="fas fa-magic"></i> Run New Match</a
+        >
+      </nav>
+
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">
+        <i class="fas fa-info-circle"></i>
+        {{ message }}
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
+
+      <div class="matches-container">
+        {% if matches %}
+        <div
+          style="
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #ebf8ff;
+            border-radius: 12px;
+            border: 1px solid #90cdf4;
+          "
+        >
+          <h3 style="color: #2a4365; margin-bottom: 0.5rem">
+            <i class="fas fa-robot" style="color: #3182ce"></i> {{
+            matches|length }} Potential Match{{ 'es' if matches|length != 1 else
+            '' }} Found
+          </h3>
+          <p style="color: #2a4365; font-size: 0.9rem">
+            Matches are sorted by similarity score. Higher percentages indicate
+            better matches.
+          </p>
+        </div>
+
+        {% for match in matches %}
+        <div class="match-card">
+          <div class="match-header">
+            <h3>
+              <i class="fas fa-link" style="margin-right: 0.5rem"></i>
+              {{ match.similarity_score }}% Similarity Match {% if
+              match.similarity_score >= 80 %}
+              <span
+                style="
+                  background: #22543d;
+                  color: white;
+                  padding: 0.25rem 0.5rem;
+                  border-radius: 12px;
+                  font-size: 0.8rem;
+                  margin-left: 0.5rem;
+                "
+              >
+                <i class="fas fa-star"></i> High Match
+              </span>
+              {% elif match.similarity_score >= 50 %}
+              <span
+                style="
+                  background: #d69e2e;
+                  color: white;
+                  padding: 0.25rem 0.5rem;
+                  border-radius: 12px;
+                  font-size: 0.8rem;
+                  margin-left: 0.5rem;
+                "
+              >
+                <i class="fas fa-thumbs-up"></i> Good Match
+              </span>
+              {% else %}
+              <span
+                style="
+                  background: #718096;
+                  color: white;
+                  padding: 0.25rem 0.5rem;
+                  border-radius: 12px;
+                  font-size: 0.8rem;
+                  margin-left: 0.5rem;
+                "
+              >
+                <i class="fas fa-question"></i> Possible Match
+              </span>
+              {% endif %}
+            </h3>
+          </div>
+          <div class="match-items">
+            <div class="lost-item">
+              <h4>
+                <i
+                  class="fas fa-search-minus"
+                  style="color: #e53e3e; margin-right: 0.5rem"
+                ></i
+                >Lost Item
+              </h4>
+              {% if match.lost_item.image_path %}
+              <img
+                src="{{ url_for('static', filename=match.lost_item.image_path.replace('static/', '')) }}"
+                alt="Lost Item"
+              />
+              {% else %}
+              <div
+                style="
+                  height: 150px;
+                  background: linear-gradient(45deg, #fed7d7, #feb2b2);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  color: #e53e3e;
+                  border-radius: 12px;
+                  margin-bottom: 1rem;
+                "
+              >
+                <i class="fas fa-image" style="font-size: 2rem"></i>
+              </div>
+              {% endif %}
+              <p>
+                <i
+                  class="fas fa-edit"
+                  style="color: #667eea; margin-right: 0.5rem"
+                ></i
+                ><strong>Description:</strong> {{ match.lost_item.description }}
+              </p>
+              <p>
+                <i
+                  class="fas fa-map-marker-alt"
+                  style="color: #667eea; margin-right: 0.5rem"
+                ></i
+                ><strong>Location:</strong> {{ match.lost_item.location }}
+              </p>
+              <p>
+                <i
+                  class="fas fa-calendar-alt"
+                  style="color: #667eea; margin-right: 0.5rem"
+                ></i
+                ><strong>Date/Time:</strong> {{ match.lost_item.date_time }}
+              </p>
+              {% if match.lost_item.contact_info %}
+              <p>
+                <i
+                  class="fas fa-phone"
+                  style="color: #667eea; margin-right: 0.5rem"
+                ></i
+                ><strong>Contact:</strong> {{ match.lost_item.contact_info }}
+              </p>
+              {% endif %}
+            </div>
+            <div class="found-item">
+              <h4>
+                <i
+                  class="fas fa-search-plus"
+                  style="color: #38a169; margin-right: 0.5rem"
+                ></i
+                >Found Item
+              </h4>
+              {% if match.found_item.image_path %}
+              <img
+                src="{{ url_for('static', filename=match.found_item.image_path.replace('static/', '')) }}"
+                alt="Found Item"
+              />
+              {% else %}
+              <div
+                style="
+                  height: 150px;
+                  background: linear-gradient(45deg, #f0fff4, #c6f6d5);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  color: #38a169;
+                  border-radius: 12px;
+                  margin-bottom: 1rem;
+                "
+              >
+                <i class="fas fa-image" style="font-size: 2rem"></i>
+              </div>
+              {% endif %}
+              <p>
+                <i
+                  class="fas fa-edit"
+                  style="color: #667eea; margin-right: 0.5rem"
+                ></i
+                ><strong>Description:</strong> {{ match.found_item.description
+                }}
+              </p>
+              <p>
+                <i
+                  class="fas fa-map-marker-alt"
+                  style="color: #667eea; margin-right: 0.5rem"
+                ></i
+                ><strong>Location:</strong> {{ match.found_item.location }}
+              </p>
+              <p>
+                <i
+                  class="fas fa-calendar-alt"
+                  style="color: #667eea; margin-right: 0.5rem"
+                ></i
+                ><strong>Date/Time:</strong> {{ match.found_item.date_time }}
+              </p>
+              {% if match.found_item.contact_info %}
+              <p>
+                <i
+                  class="fas fa-phone"
+                  style="color: #667eea; margin-right: 0.5rem"
+                ></i
+                ><strong>Contact:</strong> {{ match.found_item.contact_info }}
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %} {% else %}
+        <div class="no-matches">
+          <i
+            class="fas fa-search"
+            style="font-size: 4rem; color: #cbd5e0; margin-bottom: 1rem"
+          ></i>
+          <h3>No Matches Found</h3>
+          <p>Our AI couldn't find any potential matches at this time.</p>
+          <div
+            style="
+              display: flex;
+              gap: 1rem;
+              justify-content: center;
+              flex-wrap: wrap;
+              margin-top: 2rem;
+            "
+          >
+            <a
+              href="{{ url_for('submit_item') }}"
+              class="btn"
+              style="max-width: 200px"
+            >
+              <i class="fas fa-plus"></i> Add Lost Item
+            </a>
+            <a
+              href="{{ url_for('upload_found') }}"
+              class="btn"
+              style="max-width: 200px"
+            >
+              <i class="fas fa-upload"></i> Add Found Item
+            </a>
+            <a
+              href="{{ url_for('match_items') }}"
+              class="btn"
+              style="max-width: 200px"
+            >
+              <i class="fas fa-sync"></i> Try Again
+            </a>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </body>
+</html>
