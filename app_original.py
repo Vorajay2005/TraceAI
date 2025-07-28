@@ -2,9 +2,17 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for, f
 import sqlite3
 import os
 from werkzeug.utils import secure_filename
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import nltk
+from nltk.stem import WordNetLemmatizer
 from datetime import datetime
-import re
-from difflib import SequenceMatcher
+
+# Download required NLTK data
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet', quiet=True)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-here')
@@ -29,6 +37,8 @@ synonyms = {
     "umbrella": ["parasol", "rain cover"],
     "jacket": ["coat", "sweater", "hoodie"]
 }
+
+lemmatizer = WordNetLemmatizer()
 
 def init_db():
     conn = sqlite3.connect(DATABASE)
@@ -77,19 +87,15 @@ def allowed_file(filename):
 def preprocess_description(description):
     if not description:
         return ""
-    # Simple preprocessing without NLTK
-    words = re.findall(r'\b\w+\b', description.lower())
+    words = description.lower().split()
+    lemmatized_words = [lemmatizer.lemmatize(word) for word in words]
     replaced_words = []
-    for word in words:
+    for word in lemmatized_words:
         if word in synonyms:
             replaced_words.extend(synonyms[word])
         else:
             replaced_words.append(word)
     return " ".join(replaced_words)
-
-def simple_similarity(text1, text2):
-    """Simple similarity using SequenceMatcher instead of scikit-learn"""
-    return SequenceMatcher(None, text1, text2).ratio()
 
 def save_image(file):
     if file and allowed_file(file.filename):
@@ -224,20 +230,31 @@ def match_items():
         
         cursor.execute('DELETE FROM matches')
         
+        lost_descriptions = [preprocess_description(item[1]) for item in lost_items]
+        found_descriptions = [preprocess_description(item[1]) for item in found_items]
+        
+        vectorizer = TfidfVectorizer(ngram_range=(1, 3), stop_words='english')
+        all_descriptions = lost_descriptions + found_descriptions
+        
+        if len(all_descriptions) < 2:
+            flash('Not enough items for matching.', 'info')
+            return redirect(url_for('get_matches'))
+        
+        tfidf_matrix = vectorizer.fit_transform(all_descriptions)
+        
         matches_found = 0
-        for lost_item in lost_items:
-            lost_desc = preprocess_description(lost_item[1])
+        for i, lost_item in enumerate(lost_items):
+            lost_vector = tfidf_matrix[i]
+            found_vectors = tfidf_matrix[len(lost_items):]
+            similarities = cosine_similarity(lost_vector, found_vectors).flatten()
             
-            for found_item in found_items:
-                found_desc = preprocess_description(found_item[1])
-                similarity = simple_similarity(lost_desc, found_desc)
-                
-                threshold = 0.3  # Adjusted threshold for simple similarity
+            threshold = 0.1
+            for j, similarity in enumerate(similarities):
                 if similarity > threshold:
                     cursor.execute('''
                         INSERT INTO matches (lost_item_id, found_item_id, similarity_score, timestamp)
                         VALUES (?, ?, ?, ?)
-                    ''', (lost_item[0], found_item[0], float(similarity), str(datetime.now())))
+                    ''', (lost_item[0], found_items[j][0], float(similarity), str(datetime.now())))
                     matches_found += 1
         
         conn.commit()
